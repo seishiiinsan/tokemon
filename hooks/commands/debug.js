@@ -1,8 +1,9 @@
 import { activeMon, addItem, done, fail } from '../core/context.js'
+import { dropItem } from '../core/drops.js'
 import { spawnWild } from '../core/encounter.js'
 import { startLevelEvolution } from '../core/evolution.js'
 import { grantXp } from '../core/xp.js'
-import { findItem } from '../data/items.js'
+import { findItem, ITEMS } from '../data/items.js'
 import { findSpecies, speciesName } from '../data/lookup.js'
 import { hasSprite } from '../ui/render/frames.js'
 
@@ -11,7 +12,7 @@ import { hasSprite } from '../ui/render/frames.js'
 /** @type {import('./index.js').Command} */
 export const debug = {
   name: 'debug',
-  usage: '/tokemon debug <xp|encounter|item|tokens> …',
+  usage: '/tokemon debug <xp|encounter|drop|item|tokens> …',
   about: 'Triche de dev (TOKEMON_DEBUG=1)',
   debugOnly: true,
   async run(app, args) {
@@ -39,6 +40,16 @@ export const debug = {
           return wild
             ? done(`Un ${speciesName(wild.species)} sauvage apparaît (niv. ${wild.level}).`, events)
             : fail('Aucun mon disponible.')
+        })
+        return result.message
+      }
+      case 'drop': {
+        const forced = rest.length > 0 ? findItem(rest.join(' ')) : undefined
+        if (rest.length > 0 && !forced) return `Item inconnu : « ${rest.join(' ')} ».`
+        const result = await app.act((save, ctx) => {
+          const events = dropItem(save, ctx, forced?.id)
+          const [event] = events
+          return done(event?.type === 'drop' ? `Drop : ${ITEMS[event.item].name}.` : 'Aucun drop.', events)
         })
         return result.message
       }

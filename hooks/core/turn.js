@@ -1,5 +1,6 @@
 import { EVOLUTION_DELAY_MS, SEEN_TURNS_MAX } from '../config.js'
 import { expireBoosts } from './boosts.js'
+import { milestoneDrops, rollDrops } from './drops.js'
 import { expireWild, rollEncounters } from './encounter.js'
 import { resolvePendingEvolution, startLevelEvolution } from './evolution.js'
 import { logEvents, recordDay } from './stats.js'
@@ -60,13 +61,20 @@ export function applyTurn(save, turn, ctx) {
 
   const events = housekeeping(save, ctx)
   const tokens = Math.max(0, Math.floor(turn.tokens))
+  const totalBefore = state.totals.outputTokens
   state.totals.outputTokens += tokens
   if (turn.approximate) state.totals.approximateTokens += tokens
   state.stats.turns += 1
 
   const gained = applyTurnXp(save, tokens, ctx.now)
   /** @type {GameEvent[]} */
-  const turnEvents = [...gained.events, ...startLevelEvolution(save, ctx), ...rollEncounters(save, tokens, ctx)]
+  const turnEvents = [
+    ...gained.events,
+    ...startLevelEvolution(save, ctx),
+    ...rollEncounters(save, tokens, ctx),
+    ...rollDrops(save, tokens, ctx),
+    ...milestoneDrops(save, totalBefore, state.totals.outputTokens),
+  ]
 
   recordDay(save, tokens, gained.xp, ctx.now)
   logEvents(save, turnEvents, ctx.now)

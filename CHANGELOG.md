@@ -34,3 +34,10 @@ Format : [Conventional Commits](https://www.conventionalcommits.org/fr/), géné
 - `/tokemon catch [ball]` : taux de base × multiplicateur de la Ball, Master Ball garantie ; fuite après 10 min ou 3 échecs
 - Mon sauvage dans la bande, animation de Ball, toasts de rencontre, capture, échec et fuite
 - Pokédex vus / capturés / shiny, `/tokemon dex [mon]`, `/tokemon debug encounter [mon] [shiny]`
+
+### Lot 4 : items
+
+- Drops : un tirage à 15 % tous les 2 000 output tokens selon la table pondérée, Master Ball garantie à chaque million de tokens
+- Sac par catégorie (`/tokemon bag`), consommables (Super Bonbon, baies) utilisables sur n'importe quel mon de la box
+- Boosts temporaires horodatés : Lucky Egg (XP ×2), Multi Exp (25 % à la box), Encens (rencontres ×2), Charme Chroma (shiny ×3) ; temps restant dans la bande, toast à l'expiration
+- `/tokemon debug drop [item]`

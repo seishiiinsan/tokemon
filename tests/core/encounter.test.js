@@ -141,5 +141,5 @@ test('applyTurn déclenche les rencontres', () => {
     testCtx({ rolls: [0.1], available: gen1 }),
   )
   assert.ok(outcome.events.some((event) => event.type === 'encounter'))
-  assert.equal(save.history.events.at(-1)?.type, 'encounter')
+  assert.ok(save.history.events.some((entry) => entry.type === 'encounter'))
 })
