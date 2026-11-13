@@ -1,11 +1,14 @@
-import { COMMAND_NAME, DESKTOP_REDRAW_TICKS, TICK_MS } from './config.js'
+import { COMMAND_NAME, DESKTOP_REDRAW_TICKS, PANE_ID, PANE_TITLE, TICK_MS } from './config.js'
+import { done } from './core/context.js'
 import { createRng } from './core/rng.js'
 import { logEvents, touchStreak } from './core/stats.js'
+import { switchActiveById } from './core/team.js'
 import { applyTurn, housekeeping, needsHousekeeping } from './core/turn.js'
 import { GEN1_SPRITES } from './data/frames.gen1.js'
 import { createRepo } from './store/repo.js'
 import { getOutputTokens } from './tokens/index.js'
 import { RASTER_KEY, renderBand, sceneSize, sceneView } from './ui/band.js'
+import { createPaneView, renderPane } from './ui/pane/index.js'
 import { hasSprite, registerSprites } from './ui/render/frames.js'
 import { toCells } from './ui/render/paint.js'
 import { composeScene, createScene, sceneLayout, startBall, startFlash, startJump, stepScene } from './ui/scene.js'
@@ -42,6 +45,7 @@ export function createApp() {
   /** @type {import('./tokens/index.js').TokenReading | null} */
   let lastReading = null
   let debug = false
+  const paneView = createPaneView()
 
   const now = () => clockBase + (scene.tick - clockTick) * TICK_MS
 
@@ -136,9 +140,47 @@ export function createApp() {
     }
   }
 
+  /**
+   * Ouvre ou ferme le panneau et mémorise son état pour les sessions suivantes.
+   * @param {boolean} open
+   */
+  async function setPane(open) {
+    const { $, repo } = ready()
+    await repo.transact((save) => void (save.state.paneOpen = open))
+    if (open) return (await $.ui.open({ id: PANE_ID, title: PANE_TITLE })).isPlaced
+    await $.ui.close({ id: PANE_ID })
+    return false
+  }
+
+  /** @type {import('./ui/pane/index.js').PaneActions} */
+  const paneActions = {
+    setTab(tab) {
+      paneView.tab = tab
+      host?.ui.invalidate('ui.render')
+    },
+    setBoxPage(page) {
+      paneView.boxPage = page
+      host?.ui.invalidate('ui.render')
+    },
+    setDexPage(page) {
+      paneView.dexPage = page
+      host?.ui.invalidate('ui.render')
+    },
+    switchTo(monId) {
+      void act((save) => {
+        const result = switchActiveById(save, monId)
+        return result.ok ? result : done(result.message)
+      })
+        .then((result) => host?.ui.toast(result.message))
+        .catch(() => undefined)
+    },
+  }
+
   return {
     ready,
     act,
+    paneView,
+    setPane,
     now,
     ctx,
     scene,
@@ -169,6 +211,8 @@ export function createApp() {
       if (!save.state.starterChosen) {
         $.ui.toast('Tokemon : choisis ton starter avec /tokemon start <bulbizarre|salamèche|carapuce|pikachu>')
       }
+      // Le panneau rouvre dans l'état où il a été laissé
+      if (save.state.paneOpen) void $.ui.open({ id: PANE_ID, title: PANE_TITLE }).catch(() => undefined)
       timer?.cancel()
       timer = $.clock.every(TICK_MS, tick)
       $.ui.invalidate('ui.render')
@@ -215,6 +259,24 @@ export function createApp() {
         svg: drawn.svg ?? '',
       })
       return drawn.node
+    },
+
+    /**
+     * ui.render du panneau.
+     * @param {Host} $
+     * @param {import('./types.js').RenderEvent} e
+     * @returns {import('./types.js').UiNode | null}
+     */
+    drawPane($, e) {
+      const save = repo?.peek()
+      if (!save) return null
+      host = $
+      return renderPane({ elements: $.ui.resolve(e), e, save, now: now(), view: paneView, actions: paneActions })
+    },
+
+    /** ui.close : la personne a fermé le panneau à la main, on s'en souvient. */
+    async onPaneClosed() {
+      await repo?.transact((save) => void (save.state.paneOpen = false))
     },
   }
 }

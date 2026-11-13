@@ -1,6 +1,6 @@
 import { createApp } from './app.js'
 import { runCommand } from './commands/index.js'
-import { COMMAND_NAME } from './config.js'
+import { COMMAND_NAME, PANE_ID } from './config.js'
 
 // Point d'entrée du mod : routage des événements de l'hôte vers le runtime (app.js),
 // rien d'autre. La logique de jeu est dans core/, le dessin dans ui/.
@@ -40,6 +40,26 @@ export function register(on) {
     { component: 'AbovePrompt' },
     (/** @type {Host} */ $, /** @type {import('./types.js').RenderEvent} */ e, /** @type {Next} */ next) => {
       return app.drawBand($, e) ?? next(e)
+    },
+  )
+
+  on(
+    'ui.render',
+    { component: 'Pane', requestId: PANE_ID },
+    (/** @type {Host} */ $, /** @type {import('./types.js').RenderEvent} */ e, /** @type {Next} */ next) => {
+      return app.drawPane($, e) ?? next(e)
+    },
+  )
+
+  on(
+    'ui.close',
+    async (
+      /** @type {Host} */ _$,
+      /** @type {{ id: string, origin?: { kind: string } }} */ e,
+      /** @type {Next} */ next,
+    ) => {
+      if (e.id === PANE_ID && e.origin?.kind === 'person') await app.onPaneClosed()
+      return next(e)
     },
   )
 }

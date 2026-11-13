@@ -41,3 +41,11 @@ Format : [Conventional Commits](https://www.conventionalcommits.org/fr/), géné
 - Sac par catégorie (`/tokemon bag`), consommables (Super Bonbon, baies) utilisables sur n'importe quel mon de la box
 - Boosts temporaires horodatés : Lucky Egg (XP ×2), Multi Exp (25 % à la box), Encens (rencontres ×2), Charme Chroma (shiny ×3) ; temps restant dans la bande, toast à l'expiration
 - `/tokemon debug drop [item]`
+
+### Lot 5 : panneau
+
+- Panneau latéral à onglets (Équipe/Box · Sac · Pokédex · Succès · Stats), `/tokemon pane [onglet]`, état ouvert/fermé persisté
+- Équipe : sprite du compagnon, XP, prochaine évolution, box cliquable (un appui change de compagnon), pagination
+- Pokédex paginé (formes regroupées), sac par catégorie, boosts avec temps restant
+- Dashboard : tokens par jour sur 30 jours (sparkline), totaux, taux de capture, shiny, items, série de jours, journal des 50 derniers événements
+- `/tokemon stats`, `scripts/preview-pane.mjs`

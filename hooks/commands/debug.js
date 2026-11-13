@@ -12,8 +12,8 @@ import { hasSprite } from '../ui/render/frames.js'
 /** @type {import('./index.js').Command} */
 export const debug = {
   name: 'debug',
-  usage: '/tokemon debug <xp|encounter|drop|item|tokens> …',
-  about: 'Triche de dev (TOKEMON_DEBUG=1)',
+  usage: '/tokemon debug <action> …',
+  about: 'Triche de dev : xp <n> · encounter [mon] [shiny] · drop [item] · item <item> [n] · tokens',
   debugOnly: true,
   async run(app, args) {
     const [what = '', ...rest] = args.split(/\s+/).filter(Boolean)
@@ -69,7 +69,7 @@ export const debug = {
         return `Dernier tour : ${reading.approximate ? '≈ ' : ''}${reading.tokens} output tokens, source : ${reading.source}${reading.approximate ? ' (estimation)' : ' (réel)'}.`
       }
       default:
-        return this.usage
+        return `Usage : ${this.usage}\n${this.about}`
     }
   },
 }

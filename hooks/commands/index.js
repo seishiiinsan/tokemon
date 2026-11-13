@@ -6,7 +6,9 @@ import { dex } from './dex.js'
 import { evolve, stop } from './evolve.js'
 import { createHelp } from './help.js'
 import { nick } from './nick.js'
+import { pane } from './pane.js'
 import { start } from './start.js'
+import { stats } from './stats.js'
 import { summary } from './summary.js'
 import { switchMon } from './switch.js'
 import { use } from './use.js'
@@ -35,6 +37,8 @@ export const COMMANDS = [
   stop,
   catchWild,
   dex,
+  stats,
+  pane,
   nick,
   shiny,
   normal,

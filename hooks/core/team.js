@@ -57,8 +57,31 @@ export function findMon(save, query) {
  */
 export function switchActive(save, query) {
   if (!save.state.starterChosen) return fail("Choisis d'abord ton starter : /tokemon start <mon>")
-  const mon = findMon(save, query)
-  if (!mon) return fail(`Aucun « ${query.trim()} » dans ta box. /tokemon box pour la liste.`)
+  return activate(save, findMon(save, query), query.trim())
+}
+
+/**
+ * Rend actif un mon de la box désigné par son identifiant (bouton du panneau).
+ * @param {Save} save
+ * @param {number} monId
+ * @returns {ActionResult}
+ */
+export function switchActiveById(save, monId) {
+  return activate(
+    save,
+    save.box.find((mon) => mon.id === monId),
+    '#' + monId,
+  )
+}
+
+/**
+ * @param {Save} save
+ * @param {Mon | undefined} mon
+ * @param {string} wanted ce qui était demandé, pour le message
+ * @returns {ActionResult}
+ */
+function activate(save, mon, wanted) {
+  if (!mon) return fail(`Aucun « ${wanted} » dans ta box. /tokemon box pour la liste.`)
   if (mon.id === save.state.activeMonId) return done(`${monName(mon)} est déjà ton compagnon.`)
   save.state.activeMonId = mon.id
   // Une évolution en attente appartenait à l'ancien mon actif
