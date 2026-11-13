@@ -1,37 +1,45 @@
+import { createApp } from './app.js'
+import { runCommand } from './commands/index.js'
 import { COMMAND_NAME } from './config.js'
-import { getOutputTokens } from './tokens/index.js'
 
-// Point d'entrée du mod : routage des événements de l'hôte uniquement.
-// Lot 0 : la commande est enregistrée et chaque fin de tour mesure ses output tokens.
+// Point d'entrée du mod : routage des événements de l'hôte vers le runtime (app.js),
+// rien d'autre. La logique de jeu est dans core/, le dessin dans ui/.
 
 /** @typedef {import('./types.js').Host} Host */
-
-/** @type {import('./tokens/index.js').TokenReading | null} */
-let lastReading = null
+/** @typedef {(e: any) => Promise<any>} Next */
 
 /**
  * @param {(event: string, ...rest: any[]) => unknown} on
  */
 export function register(on) {
-  on('session.start', async (/** @type {Host} */ $, /** @type {unknown} */ e, /** @type {Function} */ next) => {
-    await $.command.register({
-      name: COMMAND_NAME,
-      description: 'Tokemon : ton compagnon Pokémon nourri aux output tokens',
-    })
+  const app = createApp()
+
+  on('session.start', async (/** @type {Host} */ $, /** @type {unknown} */ e, /** @type {Next} */ next) => {
+    await app.start($)
     return next(e)
   })
 
   on(
     'turn.complete',
-    async (/** @type {Host} */ $, /** @type {import('./types.js').TurnEvent} */ e, /** @type {Function} */ next) => {
-      lastReading = await getOutputTokens(e, { now: await $.clock.now() })
+    async (/** @type {Host} */ $, /** @type {import('./types.js').TurnEvent} */ e, /** @type {Next} */ next) => {
+      await app.onTurn($, e)
       return next(e)
     },
   )
 
-  on('command.run', { command: COMMAND_NAME }, async () => ({
-    text: lastReading
-      ? `Dernier tour : ${lastReading.approximate ? '≈ ' : ''}${lastReading.tokens} output tokens (source : ${lastReading.source}).`
-      : 'Tokemon est chargé. Aucun tour mesuré pour le moment.',
-  }))
+  on(
+    'command.run',
+    { command: COMMAND_NAME },
+    async (/** @type {Host} */ _$, /** @type {import('./types.js').CommandEvent} */ e) => ({
+      text: await runCommand(app, e.args ?? ''),
+    }),
+  )
+
+  on(
+    'ui.render',
+    { component: 'AbovePrompt' },
+    (/** @type {Host} */ $, /** @type {import('./types.js').RenderEvent} */ e, /** @type {Next} */ next) => {
+      return app.drawBand($, e) ?? next(e)
+    },
+  )
 }
