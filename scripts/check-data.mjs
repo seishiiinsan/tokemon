@@ -65,7 +65,10 @@ for (const [id, species] of Object.entries(SPECIES)) {
         `${id} : ${variant}_${anim}_8fps.gif manquant`,
       )
       const frames = GEN1_SPRITES[id]?.variants[variant]?.[anim]
-      check(frames?.length > 0, `${id} : frames ${variant}/${anim} absentes de frames.gen1.js (npm run build:frames)`)
+      check(
+        (frames?.length ?? 0) > 0,
+        `${id} : frames ${variant}/${anim} absentes de frames.gen1.js (npm run build:frames)`,
+      )
       for (const frame of frames ?? []) {
         check(
           frame.px.length === GEN1_SPRITES[id].w * GEN1_SPRITES[id].h,

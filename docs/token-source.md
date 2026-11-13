@@ -63,6 +63,14 @@ Pour brancher le transcript, il suffit de passer `readTranscript` à `getOutputT
 Les tokens estimés sont comptés à part (`state.totals.approximateTokens`) : la bande et
 `/tokemon stats` affichent `≈` dès qu'une partie du total est une estimation.
 
+## Vérification de bout en bout
+
+Le mod complet a ensuite été chargé dans le vrai moteur (`claude -p … --plugin-dir .`, 2.1.323) :
+
+- `/tokemon start salamèche` → « Salamèche devient ton compagnon ! » ;
+- un tour réel de 201 output tokens → `totals.xp = 201`, Salamèche passe du niveau 5 au niveau 6 ;
+- le store du plugin (`~/.claude/plugins/store/tokemon_inline-….json`) contient bien les 7 clés `tokemon:v1:*`.
+
 ## À revérifier manuellement
 
 - Dans **l'onglet Code de Claude Desktop** (le test a été fait en CLI headless) : même payload attendu,

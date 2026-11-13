@@ -49,3 +49,10 @@ Format : [Conventional Commits](https://www.conventionalcommits.org/fr/), géné
 - Pokédex paginé (formes regroupées), sac par catégorie, boosts avec temps restant
 - Dashboard : tokens par jour sur 30 jours (sparkline), totaux, taux de capture, shiny, items, série de jours, journal des 50 derniers événements
 - `/tokemon stats`, `scripts/preview-pane.mjs`
+
+### Lot 6 : succès et finition
+
+- 20 succès avec récompense d'item, toast et entrée de journal ; `/tokemon achievements`
+- `/tokemon download <gen2..gen5>` : téléchargement par lots depuis jakobhoeg/vscode-pokemon, cache local, reprise ; `scripts/fetch-gen.mjs` pour tout récupérer d'un coup
+- `register.js` : adaptateur de `$` exigé par `claude plugin validate` ; chargement vérifié dans le vrai moteur (2.1.323)
+- README (installation, commandes, dépannage), `docs/architecture.md`, `docs/balancing.md`

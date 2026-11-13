@@ -1,8 +1,10 @@
+import { achievements } from './achievements.js'
 import { bag } from './bag.js'
 import { box } from './box.js'
 import { catchWild } from './catch.js'
 import { debug } from './debug.js'
 import { dex } from './dex.js'
+import { download } from './download.js'
 import { evolve, stop } from './evolve.js'
 import { createHelp } from './help.js'
 import { nick } from './nick.js'
@@ -37,11 +39,13 @@ export const COMMANDS = [
   stop,
   catchWild,
   dex,
+  achievements,
   stats,
   pane,
   nick,
   shiny,
   normal,
+  download,
   debug,
 ]
 COMMANDS.push(createHelp(() => COMMANDS))

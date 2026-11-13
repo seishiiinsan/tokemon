@@ -59,8 +59,9 @@ test('évolution par niveau : annoncée au niveau requis, appliquée après le d
   assert.deepEqual(resolvePendingEvolution(save, testCtx({ now: NOW + EVOLUTION_DELAY_MS - 1 })), [])
   assert.equal(needsHousekeeping(save, NOW + EVOLUTION_DELAY_MS), true)
   const events = housekeeping(save, testCtx({ now: NOW + EVOLUTION_DELAY_MS }))
-  assert.deepEqual(events, [
+  assert.deepEqual(events.slice(0, 2), [
     { type: 'evolved', monId: mon.id, name: 'Bulbizarre', from: 'bulbasaur', to: 'ivysaur', method: 'level' },
+    { type: 'achievement', id: 'first-evolution' },
   ])
   assert.equal(mon.species, 'ivysaur')
   assert.equal(mon.evolvedFrom, 'bulbasaur')
@@ -68,7 +69,7 @@ test('évolution par niveau : annoncée au niveau requis, appliquée après le d
   assert.equal(save.state.pendingEvolution, null)
   assert.equal(save.dex.ivysaur.caught, 1)
   assert.equal(save.state.stats.evolutions, 1)
-  assert.equal(save.history.events.at(-1)?.type, 'evolved')
+  assert.ok(save.history.events.some((entry) => entry.type === 'evolved'))
 })
 
 test('/tokemon stop annule et bloque, /tokemon evolve relance', () => {

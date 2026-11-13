@@ -31,3 +31,17 @@ jobs:
         run: npm test
       - name: Validation des données
         run: npm run check-data
+
+  validate:
+    name: claude plugin validate
+    runs-on: ubuntu-latest
+    # Dépend de l'installeur de Claude Code : informatif, ne bloque pas la CI
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Claude Code
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash -s latest
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Valider le plugin
+        run: claude plugin validate .

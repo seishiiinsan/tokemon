@@ -14,9 +14,9 @@ function isAnnounced(event) {
 }
 
 /**
- * @param {import('../types.js').Host} $
+ * @param {import('../types.js').Host} io
  * @param {import('../core/events.js').GameEvent[]} events
  */
-export function toastEvents($, events) {
-  for (const event of events) if (isAnnounced(event)) $.ui.toast(describeEvent(event))
+export function toastEvents(io, events) {
+  for (const event of events) if (isAnnounced(event)) io.ui.toast(describeEvent(event))
 }

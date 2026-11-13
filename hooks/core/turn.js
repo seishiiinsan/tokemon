@@ -1,4 +1,5 @@
 import { EVOLUTION_DELAY_MS, SEEN_TURNS_MAX } from '../config.js'
+import { checkAchievements } from './achievements.js'
 import { expireBoosts } from './boosts.js'
 import { milestoneDrops, rollDrops } from './drops.js'
 import { expireWild, rollEncounters } from './encounter.js'
@@ -27,9 +28,25 @@ import { applyTurnXp } from './xp.js'
  * @returns {GameEvent[]}
  */
 export function housekeeping(save, ctx) {
-  const events = [...expireBoosts(save, ctx.now), ...expireWild(save, ctx.now), ...resolvePendingEvolution(save, ctx)]
-  logEvents(save, events, ctx.now)
-  return events
+  return settle(
+    save,
+    [...expireBoosts(save, ctx.now), ...expireWild(save, ctx.now), ...resolvePendingEvolution(save, ctx)],
+    ctx,
+  )
+}
+
+/**
+ * Clôt une action ou un tour : débloque les succès que ses événements ont rendus possibles,
+ * puis inscrit le tout au journal.
+ * @param {Save} save
+ * @param {GameEvent[]} events les événements produits jusque-là
+ * @param {Ctx} ctx
+ * @returns {GameEvent[]} les mêmes, suivis des succès et de leurs récompenses
+ */
+export function settle(save, events, ctx) {
+  const all = [...events, ...checkAchievements(save, ctx.now)]
+  logEvents(save, all, ctx.now)
+  return all
 }
 
 /**
@@ -77,7 +94,6 @@ export function applyTurn(save, turn, ctx) {
   ]
 
   recordDay(save, tokens, gained.xp, ctx.now)
-  logEvents(save, turnEvents, ctx.now)
-  events.push(...turnEvents)
+  events.push(...settle(save, turnEvents, ctx))
   return { counted: true, xp: gained.xp, events }
 }

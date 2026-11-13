@@ -1,6 +1,9 @@
 {
   "name": "tokemon-local",
-  "owner": { "name": "seishiiinsan" },
+  "description": "Marketplace locale du mod Tokemon (usage personnel)",
+  "owner": {
+    "name": "seishiiinsan"
+  },
   "plugins": [
     {
       "name": "tokemon",

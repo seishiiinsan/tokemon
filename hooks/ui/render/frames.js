@@ -24,7 +24,7 @@ import { TRANSPARENT } from './gif.js'
  * @typedef {object} Sprite
  * @property {number} w
  * @property {number} h
- * @property {Record<Variant, SpriteSheet>} variants
+ * @property {{ default: SpriteSheet, shiny?: SpriteSheet }} variants la variante shiny manque pour certains mons (gen 5)
  */
 
 /** Image prête à dessiner. @typedef {{ w: number, h: number, px: Int32Array }} Bitmap */
@@ -74,7 +74,7 @@ const BITMAPS = new WeakMap()
 export function bitmapOf(sprite, variant, frame) {
   const cached = BITMAPS.get(frame)
   if (cached) return cached
-  const colors = sprite.variants[variant].palette.map((hex) => Number.parseInt(hex, 16))
+  const colors = (sprite.variants[variant] ?? sprite.variants.default).palette.map((hex) => Number.parseInt(hex, 16))
   const px = new Int32Array(sprite.w * sprite.h)
   for (let i = 0; i < px.length; i++) {
     const char = frame.px[i]
@@ -112,7 +112,7 @@ function colorDistance(a, b) {
 /**
  * Construit un sprite compact à partir des GIF décodés d'un mon : recadré sur la boîte
  * englobante commune à toutes ses images, une palette par variante.
- * @param {Record<Variant, Record<Anim, import('./gif.js').Gif>>} sheets
+ * @param {{ default: Record<Anim, import('./gif.js').Gif>, shiny?: Record<Anim, import('./gif.js').Gif> }} sheets sans `shiny`, le sprite n'a que sa variante normale
  * @returns {Sprite}
  */
 export function buildSprite(sheets) {
@@ -121,9 +121,10 @@ export function buildSprite(sheets) {
   let minY = height
   let maxX = -1
   let maxY = -1
-  for (const variant of SPRITE_VARIANTS) {
+  const variants = SPRITE_VARIANTS.filter((variant) => sheets[variant] !== undefined)
+  for (const variant of variants) {
     for (const anim of SPRITE_ANIMS) {
-      const gif = sheets[variant][anim]
+      const gif = /** @type {Record<Anim, import('./gif.js').Gif>} */ (sheets[variant])[anim]
       if (gif.width !== width || gif.height !== height) throw new Error('Les GIF du sprite ont des tailles différentes')
       for (const { px } of gif.frames) {
         for (let i = 0; i < px.length; i++) {
@@ -142,7 +143,8 @@ export function buildSprite(sheets) {
 
   /** @type {Sprite} */
   const sprite = { w: maxX - minX + 1, h: maxY - minY + 1, variants: /** @type {any} */ ({}) }
-  for (const variant of SPRITE_VARIANTS) {
+  for (const variant of variants) {
+    const sheet = /** @type {Record<Anim, import('./gif.js').Gif>} */ (sheets[variant])
     /** @type {number[]} */
     const colors = []
     /** @param {number} color */
@@ -165,8 +167,8 @@ export function buildSprite(sheets) {
         for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) text += charOf(px[y * width + x])
         return { ms, px: text }
       })
-    const idle = pack(sheets[variant].idle)
-    const walk = pack(sheets[variant].walk)
+    const idle = pack(sheet.idle)
+    const walk = pack(sheet.walk)
     sprite.variants[variant] = { palette: colors.map((color) => color.toString(16).padStart(6, '0')), idle, walk }
   }
   return sprite

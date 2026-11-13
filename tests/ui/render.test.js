@@ -85,7 +85,7 @@ test('buildSprite : recadrage commun, palette par variante, identique au fichier
   const sprite = buildSprite(sheets)
   assert.deepEqual(sprite, GEN1_SPRITES.pikachu)
   assert.ok(sprite.w < 32 && sprite.h < 32)
-  assert.notDeepEqual(sprite.variants.default.palette, sprite.variants.shiny.palette)
+  assert.notDeepEqual(sprite.variants.default.palette, sprite.variants.shiny?.palette)
   for (const frame of sprite.variants.default.idle) assert.equal(frame.px.length, sprite.w * sprite.h)
 })
 

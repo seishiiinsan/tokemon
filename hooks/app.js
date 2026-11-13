@@ -1,10 +1,11 @@
 import { COMMAND_NAME, DESKTOP_REDRAW_TICKS, PANE_ID, PANE_TITLE, TICK_MS } from './config.js'
 import { done } from './core/context.js'
 import { createRng } from './core/rng.js'
-import { logEvents, touchStreak } from './core/stats.js'
+import { touchStreak } from './core/stats.js'
 import { switchActiveById } from './core/team.js'
-import { applyTurn, housekeeping, needsHousekeeping } from './core/turn.js'
+import { applyTurn, housekeeping, needsHousekeeping, settle } from './core/turn.js'
 import { GEN1_SPRITES } from './data/frames.gen1.js'
+import { loadCachedSprites } from './sprites/cache.js'
 import { createRepo } from './store/repo.js'
 import { getOutputTokens } from './tokens/index.js'
 import { RASTER_KEY, renderBand, sceneSize, sceneView } from './ui/band.js'
@@ -14,7 +15,7 @@ import { toCells } from './ui/render/paint.js'
 import { composeScene, createScene, sceneLayout, startBall, startFlash, startJump, stepScene } from './ui/scene.js'
 import { toastEvents } from './ui/toasts.js'
 
-// Le runtime du mod : relie l'hôte ($), le store, le core et l'interface.
+// Le runtime du mod : relie l'hôte (l'adaptateur de $ construit par register.js), le store, le core et l'interface.
 // Aucune règle de jeu ici : il charge, appelle le core dans une transaction, puis annonce
 // et anime les événements que le core a produits.
 
@@ -49,19 +50,19 @@ export function createApp() {
 
   const now = () => clockBase + (scene.tick - clockTick) * TICK_MS
 
-  /** @param {Host} $ */
-  async function syncClock($) {
-    clockBase = await $.clock.now()
+  /** @param {Host} io */
+  async function syncClock(io) {
+    clockBase = await io.clock.now()
     clockTick = scene.tick
   }
 
   /** @returns {Ctx} */
   const ctx = () => ({ rng, now: now(), available: hasSprite })
 
-  /** @returns {{ $: Host, repo: import('./store/repo.js').Repo }} */
+  /** @returns {{ io: Host, repo: import('./store/repo.js').Repo }} */
   function ready() {
     if (!host || !repo) throw new Error("Tokemon n'est pas démarré")
-    return { $: host, repo }
+    return { io: host, repo }
   }
 
   /**
@@ -69,15 +70,15 @@ export function createApp() {
    * @param {GameEvent[]} events
    */
   function announce(events) {
-    const { $ } = ready()
+    const { io } = ready()
     for (const event of events) {
       if (event.type === 'level-up' && event.active) startJump(scene)
       if (event.type === 'evolved') startFlash(scene)
       if (event.type === 'captured') startBall(scene, true)
       if (event.type === 'throw-failed') startBall(scene, false)
     }
-    toastEvents($, events)
-    $.ui.invalidate('ui.render')
+    toastEvents(io, events)
+    io.ui.invalidate('ui.render')
   }
 
   /**
@@ -86,16 +87,15 @@ export function createApp() {
    * @returns {Promise<ActionResult>}
    */
   async function act(action) {
-    const { $, repo } = ready()
-    await syncClock($)
+    const { io, repo } = ready()
+    await syncClock(io)
     const context = ctx()
     /** @type {GameEvent[]} */
     let upkeep = []
     const result = await repo.transact((save) => {
       upkeep = housekeeping(save, context)
       const outcome = action(save, context)
-      logEvents(save, outcome.events, context.now)
-      return outcome
+      return { ...outcome, events: settle(save, outcome.events, context) }
     })
     announce([...upkeep, ...result.events])
     return result
@@ -104,7 +104,7 @@ export function createApp() {
   /** Un tick d'animation : avance la scène, repeint la bande, fait l'entretien quand il est dû. */
   function tick() {
     if (!host || !repo) return
-    const $ = host
+    const io = host
     const save = repo.peek()
     if (!save) return
     const size = band.columns > 0 ? { columns: band.columns, rows: band.rows } : null
@@ -117,16 +117,16 @@ export function createApp() {
         if (cells !== band.cells) {
           band.cells = cells
           // Un blit refusé (bande démontée, taille changée) redemande un dessin complet
-          $.ui
+          io.ui
             .blit({ requestId: band.requestId, key: RASTER_KEY, columns: band.columns, rows: band.rows, cells })
-            .catch(() => $.ui.invalidate('ui.render'))
+            .catch(() => io.ui.invalidate('ui.render'))
         }
       } else if (scene.tick % DESKTOP_REDRAW_TICKS === 0) {
-        $.ui.invalidate('ui.render')
+        io.ui.invalidate('ui.render')
       }
     }
 
-    if (scene.tick - clockTick >= CLOCK_SYNC_TICKS) void syncClock($).catch(() => undefined)
+    if (scene.tick - clockTick >= CLOCK_SYNC_TICKS) void syncClock(io).catch(() => undefined)
     if (!busy && needsHousekeeping(save, now())) {
       busy = true
       const context = ctx()
@@ -145,10 +145,10 @@ export function createApp() {
    * @param {boolean} open
    */
   async function setPane(open) {
-    const { $, repo } = ready()
+    const { io, repo } = ready()
     await repo.transact((save) => void (save.state.paneOpen = open))
-    if (open) return (await $.ui.open({ id: PANE_ID, title: PANE_TITLE })).isPlaced
-    await $.ui.close({ id: PANE_ID })
+    if (open) return (await io.ui.open({ id: PANE_ID, title: PANE_TITLE })).isPlaced
+    await io.ui.close({ id: PANE_ID })
     return false
   }
 
@@ -190,43 +190,48 @@ export function createApp() {
 
     /**
      * session.start : charge l'état, enregistre la commande, lance l'animation.
-     * @param {Host} $
+     * @param {Host} io
      */
-    async start($) {
-      host = $
-      repo = createRepo($.store)
-      await syncClock($)
+    async start(io) {
+      host = io
+      repo = createRepo(io.store)
+      await syncClock(io)
       rng = createRng((clockBase ^ (clockBase / 4294967296)) >>> 0)
       registerSprites(GEN1_SPRITES)
-      debug = (await $.env.get('TOKEMON_DEBUG')) === '1'
-      await $.command.register({
+      // Gens 2 à 5 déjà téléchargées (un cache illisible n'empêche pas le démarrage)
+      await loadCachedSprites(io).catch(() => undefined)
+      debug = (await io.env.get('TOKEMON_DEBUG')) === '1'
+      await io.command.register({
         name: COMMAND_NAME,
         description: 'Tokemon : ton compagnon Pokémon nourri aux output tokens',
         argumentHint: '[start|switch|box|use|evolve|catch|bag|dex|stats|pane|help] …',
       })
+      /** @type {GameEvent[]} */
+      let welcome = []
       const save = await repo.transact((fresh) => {
         touchStreak(fresh, now())
+        welcome = housekeeping(fresh, ctx())
         return fresh
       })
       if (!save.state.starterChosen) {
-        $.ui.toast('Tokemon : choisis ton starter avec /tokemon start <bulbizarre|salamèche|carapuce|pikachu>')
+        io.ui.toast('Tokemon : choisis ton starter avec /tokemon start <bulbizarre|salamèche|carapuce|pikachu>')
       }
       // Le panneau rouvre dans l'état où il a été laissé
-      if (save.state.paneOpen) void $.ui.open({ id: PANE_ID, title: PANE_TITLE }).catch(() => undefined)
+      if (save.state.paneOpen) void io.ui.open({ id: PANE_ID, title: PANE_TITLE }).catch(() => undefined)
       timer?.cancel()
-      timer = $.clock.every(TICK_MS, tick)
-      $.ui.invalidate('ui.render')
+      timer = io.clock.every(TICK_MS, tick)
+      announce(welcome)
     },
 
     /**
      * turn.complete : convertit les output tokens du tour en progression.
-     * @param {Host} $
+     * @param {Host} io
      * @param {import('./types.js').TurnEvent} e
      */
-    async onTurn($, e) {
+    async onTurn(io, e) {
       if (!repo) return
-      host = $
-      await syncClock($)
+      host = io
+      await syncClock(io)
       const reading = await getOutputTokens(e, { now: now() })
       lastReading = reading
       const context = ctx()
@@ -240,16 +245,16 @@ export function createApp() {
 
     /**
      * ui.render de la bande.
-     * @param {Host} $
+     * @param {Host} io
      * @param {import('./types.js').RenderEvent} e
      * @returns {import('./types.js').UiNode | null} null pour laisser la bande à l'hôte
      */
-    drawBand($, e) {
+    drawBand(io, e) {
       const save = repo?.peek()
       if (!save || e.props.hasSurvey) return null
-      host = $
+      host = io
       const size = sceneSize(e)
-      const drawn = renderBand($.ui.resolve(e), e, { save, scene, now: now() })
+      const drawn = renderBand(io.ui.resolve(e), e, { save, scene, now: now() })
       Object.assign(band, {
         requestId: drawn.cells !== null || drawn.svg !== null ? e.requestId : '',
         surface: e.surface,
@@ -263,15 +268,15 @@ export function createApp() {
 
     /**
      * ui.render du panneau.
-     * @param {Host} $
+     * @param {Host} io
      * @param {import('./types.js').RenderEvent} e
      * @returns {import('./types.js').UiNode | null}
      */
-    drawPane($, e) {
+    drawPane(io, e) {
       const save = repo?.peek()
       if (!save) return null
-      host = $
-      return renderPane({ elements: $.ui.resolve(e), e, save, now: now(), view: paneView, actions: paneActions })
+      host = io
+      return renderPane({ elements: io.ui.resolve(e), e, save, now: now(), view: paneView, actions: paneActions })
     },
 
     /** ui.close : la personne a fermé le panneau à la main, on s'en souvient. */
