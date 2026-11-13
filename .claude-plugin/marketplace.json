@@ -1,0 +1,14 @@
+{
+  "name": "tokemon-local",
+  "description": "Marketplace locale du mod Tokemon (usage personnel)",
+  "owner": {
+    "name": "seishiiinsan"
+  },
+  "plugins": [
+    {
+      "name": "tokemon",
+      "source": "./",
+      "description": "Un compagnon Pokémon pixel art qui gagne de l'XP avec tes output tokens"
+    }
+  ]
+}

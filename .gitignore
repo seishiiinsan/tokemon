@@ -1,0 +1,6 @@
+node_modules/
+coverage/
+.claude-plugin/types/
+preview/
+*.log
+.DS_Store

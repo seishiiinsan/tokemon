@@ -1,0 +1,6 @@
+{
+  "name": "tokemon",
+  "version": "0.1.0",
+  "description": "Un compagnon Pokémon pixel art qui gagne de l'XP avec tes output tokens",
+  "author": { "name": "seishiiinsan" }
+}

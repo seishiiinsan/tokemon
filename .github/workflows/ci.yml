@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, types, tests, données
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Biome
+        run: npm run lint
+      - name: tsc --checkJs
+        run: npm run typecheck
+      - name: Tests (couverture core >= 80 %)
+        run: npm test
+      - name: Validation des données
+        run: npm run check-data
+
+  validate:
+    name: claude plugin validate
+    runs-on: ubuntu-latest
+    # Dépend de l'installeur de Claude Code : informatif, ne bloque pas la CI
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Claude Code
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash -s latest
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Valider le plugin
+        run: claude plugin validate .

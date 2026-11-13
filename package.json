@@ -1,0 +1,28 @@
+{
+  "name": "tokemon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mod Claude Code : un compagnon Pokémon pixel art nourri aux output tokens",
+  "engines": {
+    "node": ">=22.8"
+  },
+  "scripts": {
+    "lint": "biome ci .",
+    "format": "biome check --write .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test --experimental-test-coverage --test-coverage-include='hooks/core/**' --test-coverage-lines=80 --test-coverage-functions=80 'tests/**/*.test.js'",
+    "check-data": "node scripts/check-data.mjs",
+    "build:frames": "node scripts/build-frames.mjs",
+    "build:data": "node scripts/build-data.mjs",
+    "preview": "node scripts/preview-band.mjs && node scripts/preview-pane.mjs",
+    "check": "npm run lint && npm run typecheck && npm test && npm run check-data"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.7",
+    "@pkmn/dex": "^0.11.0",
+    "@types/node": "^26.6.6",
+    "pokemon": "^3.3.1",
+    "typescript": "^7.0.2"
+  }
+}
