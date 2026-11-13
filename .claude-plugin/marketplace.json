@@ -1,0 +1,11 @@
+{
+  "name": "tokemon-local",
+  "owner": { "name": "seishiiinsan" },
+  "plugins": [
+    {
+      "name": "tokemon",
+      "source": "./",
+      "description": "Un compagnon Pokémon pixel art qui gagne de l'XP avec tes output tokens"
+    }
+  ]
+}
