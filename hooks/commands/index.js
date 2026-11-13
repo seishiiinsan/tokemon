@@ -1,9 +1,12 @@
 import { box } from './box.js'
+import { debug } from './debug.js'
+import { evolve, stop } from './evolve.js'
 import { createHelp } from './help.js'
 import { nick } from './nick.js'
 import { start } from './start.js'
 import { summary } from './summary.js'
 import { switchMon } from './switch.js'
+import { use } from './use.js'
 import { normal, shiny } from './variant.js'
 
 // Routage des sous-commandes de /tokemon : un fichier par sous-commande.
@@ -18,7 +21,7 @@ import { normal, shiny } from './variant.js'
  */
 
 /** @type {Command[]} */
-export const COMMANDS = [summary, start, switchMon, box, nick, shiny, normal]
+export const COMMANDS = [summary, start, switchMon, box, use, evolve, stop, nick, shiny, normal, debug]
 COMMANDS.push(createHelp(() => COMMANDS))
 
 /**

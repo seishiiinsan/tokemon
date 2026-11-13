@@ -18,3 +18,11 @@ Format : [Conventional Commits](https://www.conventionalcommits.org/fr/), géné
 - `/tokemon`, `start`, `switch`, `box`, `nick`, `shiny`, `default`, `help`
 - Persistance `$.store` versionnée, migrations, transactions avec relecture (sessions concurrentes), déduplication des tours
 - Données : 634 espèces (gens 1 à 5), évolutions, raretés, items, succès ; `scripts/check-data.mjs`
+
+### Lot 2 : évolutions
+
+- Évolution par niveau : annoncée (toast, flash blanc), appliquée après 15 s, annulable avec `/tokemon stop`, relançable avec `/tokemon evolve`
+- Évolution par pierre et par échange (Link Cable) via `/tokemon use <item> [mon]`
+- Évoli et espèces à plusieurs branches : `/tokemon evolve <forme>`, formes des gens 2+ dès que leurs sprites sont en local
+- Méthodes absentes de la V1 (bonheur, lieu…) repliées sur un niveau configurable
+- `/tokemon debug xp|item|tokens` (TOKEMON_DEBUG=1)

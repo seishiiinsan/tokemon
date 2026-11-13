@@ -160,7 +160,7 @@ export function createApp() {
       await $.command.register({
         name: COMMAND_NAME,
         description: 'Tokemon : ton compagnon Pokémon nourri aux output tokens',
-        argumentHint: '[start|switch|box|nick|help] …',
+        argumentHint: '[start|switch|box|use|evolve|catch|bag|dex|stats|pane|help] …',
       })
       const save = await repo.transact((fresh) => {
         touchStreak(fresh, now())
