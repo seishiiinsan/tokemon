@@ -1,5 +1,7 @@
 import { box } from './box.js'
+import { catchWild } from './catch.js'
 import { debug } from './debug.js'
+import { dex } from './dex.js'
 import { evolve, stop } from './evolve.js'
 import { createHelp } from './help.js'
 import { nick } from './nick.js'
@@ -21,7 +23,7 @@ import { normal, shiny } from './variant.js'
  */
 
 /** @type {Command[]} */
-export const COMMANDS = [summary, start, switchMon, box, use, evolve, stop, nick, shiny, normal, debug]
+export const COMMANDS = [summary, start, switchMon, box, use, evolve, stop, catchWild, dex, nick, shiny, normal, debug]
 COMMANDS.push(createHelp(() => COMMANDS))
 
 /**

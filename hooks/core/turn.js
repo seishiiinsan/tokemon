@@ -1,5 +1,6 @@
 import { EVOLUTION_DELAY_MS, SEEN_TURNS_MAX } from '../config.js'
 import { expireBoosts } from './boosts.js'
+import { expireWild, rollEncounters } from './encounter.js'
 import { resolvePendingEvolution, startLevelEvolution } from './evolution.js'
 import { logEvents, recordDay } from './stats.js'
 import { applyTurnXp } from './xp.js'
@@ -25,7 +26,7 @@ import { applyTurnXp } from './xp.js'
  * @returns {GameEvent[]}
  */
 export function housekeeping(save, ctx) {
-  const events = [...expireBoosts(save, ctx.now), ...resolvePendingEvolution(save, ctx)]
+  const events = [...expireBoosts(save, ctx.now), ...expireWild(save, ctx.now), ...resolvePendingEvolution(save, ctx)]
   logEvents(save, events, ctx.now)
   return events
 }
@@ -36,9 +37,10 @@ export function housekeeping(save, ctx) {
  * @param {number} now
  */
 export function needsHousekeeping(save, now) {
-  const pending = save.state.pendingEvolution
+  const { pendingEvolution: pending, wild } = save.state
   return (
     save.boosts.some((boost) => boost.expiresAt <= now) ||
+    (wild !== null && wild.expiresAt <= now) ||
     (pending !== null && now >= pending.startedAt + EVOLUTION_DELAY_MS)
   )
 }
@@ -64,7 +66,7 @@ export function applyTurn(save, turn, ctx) {
 
   const gained = applyTurnXp(save, tokens, ctx.now)
   /** @type {GameEvent[]} */
-  const turnEvents = [...gained.events, ...startLevelEvolution(save, ctx)]
+  const turnEvents = [...gained.events, ...startLevelEvolution(save, ctx), ...rollEncounters(save, tokens, ctx)]
 
   recordDay(save, tokens, gained.xp, ctx.now)
   logEvents(save, turnEvents, ctx.now)

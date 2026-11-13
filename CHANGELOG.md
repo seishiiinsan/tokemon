@@ -26,3 +26,11 @@ Format : [Conventional Commits](https://www.conventionalcommits.org/fr/), géné
 - Évoli et espèces à plusieurs branches : `/tokemon evolve <forme>`, formes des gens 2+ dès que leurs sprites sont en local
 - Méthodes absentes de la V1 (bonheur, lieu…) repliées sur un niveau configurable
 - `/tokemon debug xp|item|tokens` (TOKEMON_DEBUG=1)
+
+### Lot 3 : rencontres et capture
+
+- Rencontres sauvages : un tirage à 35 % tous les 5 000 output tokens (×2 sous Encens), pool limité aux sprites en local
+- 5 raretés (listes éditables dans `data/rarity.js`), formes évoluées plus rares (÷3, ÷9), shiny à 1/512
+- `/tokemon catch [ball]` : taux de base × multiplicateur de la Ball, Master Ball garantie ; fuite après 10 min ou 3 échecs
+- Mon sauvage dans la bande, animation de Ball, toasts de rencontre, capture, échec et fuite
+- Pokédex vus / capturés / shiny, `/tokemon dex [mon]`, `/tokemon debug encounter [mon] [shiny]`
